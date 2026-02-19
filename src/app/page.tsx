@@ -74,7 +74,22 @@ export default function Home() {
     };
   }, []);
 
-  // Heartbeat for listener count
+  // Fetch counts on mount (so ambient numbers show immediately)
+  useEffect(() => {
+    fetch("/api/listeners")
+      .then((r) => r.json())
+      .then(setListenerCounts)
+      .catch(() => {});
+    const i = setInterval(() => {
+      fetch("/api/listeners")
+        .then((r) => r.json())
+        .then(setListenerCounts)
+        .catch(() => {});
+    }, 20_000);
+    return () => clearInterval(i);
+  }, []);
+
+  // Heartbeat for listener count (active playing)
   useEffect(() => {
     if (!playing) return;
     const beat = () => {
