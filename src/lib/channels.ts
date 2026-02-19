@@ -12,7 +12,7 @@ export const channels: Channel[] = [
     id: "lofi",
     name: "lo-fi",
     description: "chill beats to code to",
-    icon: "☕",
+    icon: "~",
     youtubeIds: [
       "jfKfPfyJRdk", // lofi girl
       "rUxyKA_-grg", // lofi girl 2
@@ -22,7 +22,7 @@ export const channels: Channel[] = [
     id: "synthwave",
     name: "synthwave",
     description: "retro-futuristic focus",
-    icon: "🌆",
+    icon: ">",
     youtubeIds: [
       "4xDzrJKXOOY", // synthwave radio
       "MVPTGNGiI-4", // retrowave
@@ -32,7 +32,7 @@ export const channels: Channel[] = [
     id: "ambient",
     name: "ambient",
     description: "deep focus atmospheric",
-    icon: "🌌",
+    icon: "·",
     youtubeIds: [
       "S_MOd40zlYU", // ambient music
       "7NOSDKb0HlU", // space ambient
@@ -42,7 +42,7 @@ export const channels: Channel[] = [
     id: "jazz",
     name: "jazz-hop",
     description: "smooth jazz & hip-hop fusion",
-    icon: "🎷",
+    icon: "♪",
     youtubeIds: [
       "9QLc8GHW9MI", // jazz hop cafe
       "fEvM-OUbaKs", // jazz vibes
@@ -52,7 +52,7 @@ export const channels: Channel[] = [
     id: "deepfocus",
     name: "deep-focus",
     description: "minimal techno for flow state",
-    icon: "🧠",
+    icon: "◉",
     youtubeIds: [
       "DWcJFNfaw9c", // deep house
       "w0o8JCxjjpM", // techno focus
@@ -62,7 +62,7 @@ export const channels: Channel[] = [
     id: "classical",
     name: "classical",
     description: "timeless compositions",
-    icon: "🎻",
+    icon: "♫",
     youtubeIds: [
       "jgpJVI3tDbY", // classical music
       "mIYzp5rcTvU", // classical focus

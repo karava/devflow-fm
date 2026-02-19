@@ -253,7 +253,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="text-green-800 text-xs">
-                  {listenerCounts[ch.id] ?? 0} <span className="text-green-900">⚡</span>
+                  {listenerCounts[ch.id] ?? 0}
                 </div>
               </div>
             </button>
@@ -269,9 +269,7 @@ export default function Home() {
         <div className="mt-2 text-green-800 text-xs">
           devflow.fm — music for developers
         </div>
-        <div className="text-green-900 text-xs mt-1">
-          powered by youtube • built with next.js
-        </div>
+        {/* */}
       </footer>
     </main>
   );
