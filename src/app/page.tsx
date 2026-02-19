@@ -269,7 +269,17 @@ export default function Home() {
         <div className="mt-2 text-green-800 text-xs">
           devflow.fm — music for developers
         </div>
-        {/* */}
+        <div className="mt-4 border border-green-900/30 rounded p-3 bg-[#0d0d0d] max-w-xs mx-auto">
+          <div className="text-green-800 text-xs italic mb-2">
+            a song from the founder&apos;s coding mentor
+          </div>
+          <audio
+            controls
+            src="/audio/mentor-song.mp3"
+            className="w-full h-8 opacity-60 hover:opacity-100 transition-opacity"
+            style={{ filter: "sepia(100%) saturate(300%) brightness(70%) hue-rotate(100deg)" }}
+          />
+        </div>
       </footer>
     </main>
   );
