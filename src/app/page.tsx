@@ -253,7 +253,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="text-green-800 text-xs">
-                  {listenerCounts[ch.id] ?? 0}
+                  {listenerCounts[ch.id] ?? 0} <span className="text-green-900">⚡</span>
                 </div>
               </div>
             </button>
