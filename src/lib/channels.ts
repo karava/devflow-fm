@@ -44,8 +44,9 @@ export const channels: Channel[] = [
     description: "smooth jazz & hip-hop fusion",
     icon: "♪",
     youtubeIds: [
-      "9QLc8GHW9MI", // jazz hop cafe
-      "fEvM-OUbaKs", // jazz vibes
+      "Dx5qFachd3A", // relaxing jazz piano radio 24/7
+      "kgx4WGK0oNU", // jazz/lofi hip hop radio 24/7
+      "fEvM-OUbaKs", // coffee jazz lounge 24/7
     ],
   },
   {
@@ -54,8 +55,9 @@ export const channels: Channel[] = [
     description: "minimal techno for flow state",
     icon: "◉",
     youtubeIds: [
+      "Kk2jsfBsKX4", // coding music for deep focus - underground hacker
+      "4w7ZtPYJ6J4", // 24/7 focus techno & electro
       "DWcJFNfaw9c", // deep house
-      "w0o8JCxjjpM", // techno focus
     ],
   },
   {
