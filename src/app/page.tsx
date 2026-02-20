@@ -57,6 +57,7 @@ export default function Home() {
           fs: 0,
           modestbranding: 1,
           rel: 0,
+          origin: window.location.origin,
         },
         events: {
           onReady: () => {

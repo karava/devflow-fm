@@ -56,7 +56,7 @@ export const channels: Channel[] = [
     icon: "◉",
     youtubeIds: [
       "Kk2jsfBsKX4", // coding music for deep focus - underground hacker
-      "4w7ZtPYJ6J4", // 24/7 focus techno & electro
+      "hiWGj7j6pxE", // 24/7 deep focus melodic techno
       "DWcJFNfaw9c", // deep house
     ],
   },
