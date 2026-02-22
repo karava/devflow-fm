@@ -9,19 +9,30 @@ const TIMEOUT = 30_000; // 30s heartbeat timeout
 const CHANNEL_IDS = ["lofi", "synthwave", "ambient", "jazz", "deepfocus", "classical"];
 
 // Base range per channel [min, max] — lo-fi most popular, classical niche
+// These are day-0 ranges (launch date). Total grows ~5% daily.
+const LAUNCH_DATE = new Date("2026-02-22T00:00:00Z").getTime();
+const DAILY_GROWTH = 0.05; // 5% per day
+
 const BASE_RANGES: Record<string, [number, number]> = {
-  lofi:      [8, 18],
-  synthwave: [4, 12],
-  ambient:   [3, 9],
-  jazz:      [2, 7],
-  deepfocus: [5, 14],
-  classical: [1, 5],
+  lofi:      [0, 18],
+  synthwave: [0, 12],
+  ambient:   [0, 9],
+  jazz:      [0, 7],
+  deepfocus: [0, 14],
+  classical: [0, 5],
 };
+
+// Growth multiplier based on days since launch
+function growthMultiplier(): number {
+  const daysSinceLaunch = (Date.now() - LAUNCH_DATE) / (1000 * 60 * 60 * 24);
+  return Math.pow(1 + DAILY_GROWTH, Math.max(0, daysSinceLaunch));
+}
 
 // Seeded pseudo-random that drifts smoothly (changes every ~45s per channel)
 function ambientCount(channelId: string): number {
-  const range = BASE_RANGES[channelId] ?? [2, 8];
-  const [min, max] = range;
+  const range = BASE_RANGES[channelId] ?? [0, 8];
+  const [min, baseMax] = range;
+  const max = Math.round(baseMax * growthMultiplier());
 
   // Use time bucket so the number drifts slowly, not every request
   const bucket = Math.floor(Date.now() / 45_000);
