@@ -1,10 +1,40 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  type CSSProperties,
+} from "react";
 import { channels, Channel } from "@/lib/channels";
+
+declare global {
+  interface Window {
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+type VisualizerBarStyle = CSSProperties & {
+  "--duration": string;
+  "--delay": string;
+};
 
 function genId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+function isTypingTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tagName = target.tagName.toLowerCase();
+  return (
+    tagName === "input" ||
+    tagName === "textarea" ||
+    tagName === "select" ||
+    tagName === "button" ||
+    target.isContentEditable
+  );
 }
 
 export default function Home() {
@@ -14,8 +44,56 @@ export default function Home() {
   const [time, setTime] = useState("");
   const listenerIdRef = useRef<string>("");
   const playerRef = useRef<YT.Player | null>(null);
+  const activeChannelRef = useRef<Channel>(channels[0]);
+  const videoIndexRef = useRef(0);
+  const mutedRef = useRef(false);
+  const autoplayAttemptedRef = useRef(false);
   const [playerReady, setPlayerReady] = useState(false);
   const [showVisualizer, setShowVisualizer] = useState(false);
+  const [muted, setMuted] = useState(false);
+
+  const visualizerBars = useMemo<VisualizerBarStyle[]>(
+    () =>
+      Array.from({ length: 40 }, (_, i) => ({
+        "--duration": `${0.4 + ((i * 17) % 9) / 10}s`,
+        "--delay": `${((i * 11) % 6) / 10}s`,
+        height: "20%",
+      })),
+    []
+  );
+
+  const loadChannelVideo = useCallback(
+    (ch: Channel, index = 0, options: { muted?: boolean } = {}) => {
+      const player = playerRef.current;
+      if (!player) return;
+
+      const videoId = ch.youtubeIds[index];
+      if (!videoId) return;
+
+      activeChannelRef.current = ch;
+      videoIndexRef.current = index;
+      setActiveChannel(ch);
+
+      if (options.muted) {
+        player.mute();
+        setMuted(true);
+      } else {
+        player.unMute();
+        setMuted(false);
+      }
+
+      player.loadVideoById(videoId);
+      setPlaying(true);
+      setShowVisualizer(true);
+    },
+    []
+  );
+
+  const tryNextVideo = useCallback(() => {
+    const ch = activeChannelRef.current;
+    const nextIndex = (videoIndexRef.current + 1) % ch.youtubeIds.length;
+    loadChannelVideo(ch, nextIndex, { muted: mutedRef.current });
+  }, [loadChannelVideo]);
 
   // Generate stable listener ID
   useEffect(() => {
@@ -26,6 +104,15 @@ export default function Home() {
     }
     listenerIdRef.current = id;
   }, []);
+
+  // Keep refs in sync for YouTube callbacks
+  useEffect(() => {
+    activeChannelRef.current = activeChannel;
+  }, [activeChannel]);
+
+  useEffect(() => {
+    mutedRef.current = muted;
+  }, [muted]);
 
   // Clock
   useEffect(() => {
@@ -40,13 +127,7 @@ export default function Home() {
 
   // Load YouTube IFrame API
   useEffect(() => {
-    if (document.getElementById("yt-api")) return;
-    const tag = document.createElement("script");
-    tag.id = "yt-api";
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-
-    (window as any).onYouTubeIframeAPIReady = () => {
+    window.onYouTubeIframeAPIReady = () => {
       const player = new YT.Player("yt-player", {
         height: "1",
         width: "1",
@@ -66,14 +147,37 @@ export default function Home() {
           },
           onStateChange: (e: YT.OnStateChangeEvent) => {
             if (e.data === YT.PlayerState.ENDED) {
-              // Auto-play next video in channel
-              player.playVideo();
+              tryNextVideo();
             }
+          },
+          onError: () => {
+            tryNextVideo();
           },
         },
       });
     };
-  }, []);
+
+    if (playerRef.current) return;
+
+    if (window.YT?.Player) {
+      window.onYouTubeIframeAPIReady();
+      return;
+    }
+
+    if (!document.getElementById("yt-api")) {
+      const tag = document.createElement("script");
+      tag.id = "yt-api";
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(tag);
+    }
+  }, [tryNextVideo]);
+
+  // Browser-safe auto-start: muted autoplay is allowed where audible autoplay is blocked.
+  useEffect(() => {
+    if (!playerReady || autoplayAttemptedRef.current) return;
+    autoplayAttemptedRef.current = true;
+    loadChannelVideo(activeChannelRef.current, 0, { muted: true });
+  }, [loadChannelVideo, playerReady]);
 
   // Fetch counts on mount (so ambient numbers show immediately)
   useEffect(() => {
@@ -134,28 +238,44 @@ export default function Home() {
 
   const playChannel = useCallback(
     (ch: Channel) => {
-      setActiveChannel(ch);
-      if (playerRef.current && playerReady) {
-        playerRef.current.loadVideoById(ch.youtubeIds[0]);
-        setPlaying(true);
-        setShowVisualizer(true);
-      }
+      loadChannelVideo(ch);
     },
-    [playerReady]
+    [loadChannelVideo]
   );
 
   const togglePlay = useCallback(() => {
-    if (!playerRef.current) return;
+    const player = playerRef.current;
+    if (!player) return;
     if (playing) {
-      playerRef.current.pauseVideo();
+      player.pauseVideo();
       setPlaying(false);
       setShowVisualizer(false);
     } else {
-      playerRef.current.loadVideoById(activeChannel.youtubeIds[0]);
-      setPlaying(true);
-      setShowVisualizer(true);
+      loadChannelVideo(activeChannelRef.current);
     }
-  }, [playing, activeChannel]);
+  }, [loadChannelVideo, playing]);
+
+  const unmutePlayer = useCallback(() => {
+    const player = playerRef.current;
+    if (!player) return;
+    player.unMute();
+    player.playVideo();
+    setMuted(false);
+    setPlaying(true);
+    setShowVisualizer(true);
+  }, []);
+
+  // Spacebar toggles play/pause, unless the user is interacting with a form/control.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code !== "Space" || event.repeat || isTypingTarget(event.target)) return;
+      event.preventDefault();
+      togglePlay();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [togglePlay]);
 
   const totalListeners = Object.values(listenerCounts).reduce((a, b) => a + b, 0);
 
@@ -196,20 +316,16 @@ export default function Home() {
       {/* Visualizer */}
       <div className="w-full h-16 mb-6 flex items-end justify-center gap-[3px]">
         {showVisualizer &&
-          Array.from({ length: 40 }).map((_, i) => (
+          visualizerBars.map((style, i) => (
             <div
               key={i}
               className="bar-animate bg-green-500/70 w-[4px] rounded-sm"
-              style={{
-                ["--duration" as any]: `${0.4 + Math.random() * 0.8}s`,
-                ["--delay" as any]: `${Math.random() * 0.5}s`,
-                height: "20%",
-              }}
+              style={style}
             />
           ))}
         {!showVisualizer && (
           <div className="text-green-700 text-sm">
-            {playerReady ? "[ select a channel to start ]" : "[ loading player... ]"}
+            {playerReady ? "[ press play or spacebar to start ]" : "[ loading player... ]"}
           </div>
         )}
       </div>
@@ -220,13 +336,24 @@ export default function Home() {
           <span className="text-green-600 text-xs uppercase tracking-widest">
             now playing
           </span>
-          <button
-            onClick={togglePlay}
-            disabled={!playerReady}
-            className="text-green-400 hover:text-green-300 border border-green-800 px-3 py-1 text-xs rounded hover:border-green-600 transition-colors disabled:opacity-30"
-          >
-            {playing ? "⏸ pause" : "▶ play"}
-          </button>
+          <div className="flex items-center gap-2">
+            {muted && playing && (
+              <button
+                onClick={unmutePlayer}
+                disabled={!playerReady}
+                className="text-green-400 hover:text-green-300 border border-green-800 px-3 py-1 text-xs rounded hover:border-green-600 transition-colors disabled:opacity-30"
+              >
+                🔊 unmute
+              </button>
+            )}
+            <button
+              onClick={togglePlay}
+              disabled={!playerReady}
+              className="text-green-400 hover:text-green-300 border border-green-800 px-3 py-1 text-xs rounded hover:border-green-600 transition-colors disabled:opacity-30"
+            >
+              {playing ? "⏸ pause" : "▶ play"}
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-2xl">{activeChannel.icon}</span>
@@ -237,6 +364,7 @@ export default function Home() {
         </div>
         <div className="mt-2 text-green-800 text-xs">
           {listenerCounts[activeChannel.id] ?? 0} listening to this channel
+          {muted && playing ? " · autoplay muted by browser policy" : ""}
         </div>
       </div>
 

@@ -55,9 +55,9 @@ export const channels: Channel[] = [
     description: "minimal techno for flow state",
     icon: "◉",
     youtubeIds: [
-      "Kk2jsfBsKX4", // coding music for deep focus - underground hacker
-      "hiWGj7j6pxE", // 24/7 deep focus melodic techno
-      "DWcJFNfaw9c", // deep house
+      "hiWGj7j6pxE", // melodic techno & progressive house deep focus mix
+      "DWcJFNfaw9c", // lofi hip hop radio
+      "jfKfPfyJRdk", // lofi girl
     ],
   },
   {
