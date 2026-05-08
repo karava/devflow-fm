@@ -21,6 +21,8 @@ type VisualizerBarStyle = CSSProperties & {
   "--delay": string;
 };
 
+const LAST_CHANNEL_KEY = "devflow-last-channel";
+
 function genId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
@@ -73,6 +75,7 @@ export default function Home() {
       activeChannelRef.current = ch;
       videoIndexRef.current = index;
       setActiveChannel(ch);
+      localStorage.setItem(LAST_CHANNEL_KEY, ch.id);
 
       if (options.muted) {
         player.mute();
@@ -95,7 +98,7 @@ export default function Home() {
     loadChannelVideo(ch, nextIndex, { muted: mutedRef.current });
   }, [loadChannelVideo]);
 
-  // Generate stable listener ID
+  // Generate stable listener ID and restore the last selected channel.
   useEffect(() => {
     let id = localStorage.getItem("devflow-listener-id");
     if (!id) {
@@ -103,6 +106,12 @@ export default function Home() {
       localStorage.setItem("devflow-listener-id", id);
     }
     listenerIdRef.current = id;
+
+    const lastChannelId = localStorage.getItem(LAST_CHANNEL_KEY);
+    const lastChannel = channels.find((ch) => ch.id === lastChannelId);
+    if (lastChannel) {
+      activeChannelRef.current = lastChannel;
+    }
   }, []);
 
   // Keep refs in sync for YouTube callbacks
@@ -255,27 +264,51 @@ export default function Home() {
     }
   }, [loadChannelVideo, playing]);
 
-  const unmutePlayer = useCallback(() => {
+  const toggleMute = useCallback(() => {
     const player = playerRef.current;
     if (!player) return;
-    player.unMute();
-    player.playVideo();
-    setMuted(false);
-    setPlaying(true);
-    setShowVisualizer(true);
-  }, []);
 
-  // Spacebar toggles play/pause, unless the user is interacting with a form/control.
+    if (mutedRef.current) {
+      player.unMute();
+      setMuted(false);
+      if (playing) player.playVideo();
+    } else {
+      player.mute();
+      setMuted(true);
+    }
+
+    if (playing) {
+      setShowVisualizer(true);
+    }
+  }, [playing]);
+
+  // Keyboard shortcuts: space toggles play/pause, 1-6 switch channels, m toggles mute.
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code !== "Space" || event.repeat || isTypingTarget(event.target)) return;
-      event.preventDefault();
-      togglePlay();
+      if (event.repeat || isTypingTarget(event.target)) return;
+
+      if (event.code === "Space") {
+        event.preventDefault();
+        togglePlay();
+        return;
+      }
+
+      const channelIndex = Number(event.key) - 1;
+      if (channelIndex >= 0 && channelIndex < channels.length) {
+        event.preventDefault();
+        loadChannelVideo(channels[channelIndex], 0, { muted: mutedRef.current });
+        return;
+      }
+
+      if (event.key.toLowerCase() === "m") {
+        event.preventDefault();
+        toggleMute();
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [togglePlay]);
+  }, [loadChannelVideo, toggleMute, togglePlay]);
 
   const totalListeners = Object.values(listenerCounts).reduce((a, b) => a + b, 0);
 
@@ -339,7 +372,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             {muted && playing && (
               <button
-                onClick={unmutePlayer}
+                onClick={toggleMute}
                 disabled={!playerReady}
                 className="text-green-400 hover:text-green-300 border border-green-800 px-3 py-1 text-xs rounded hover:border-green-600 transition-colors disabled:opacity-30"
               >
@@ -364,7 +397,7 @@ export default function Home() {
         </div>
         <div className="mt-2 text-green-800 text-xs">
           {listenerCounts[activeChannel.id] ?? 0} listening to this channel
-          {muted && playing ? " · autoplay muted by browser policy" : ""}
+          {muted && playing ? " · muted" : ""}
         </div>
       </div>
 
@@ -412,6 +445,9 @@ export default function Home() {
         </div>
         <div className="mt-2 text-green-800 text-xs">
           devflow.fm — music for developers
+        </div>
+        <div className="mt-1 text-green-900 text-xs">
+          shortcuts: space play/pause · 1-6 channels · m mute
         </div>
         <div className="mt-4 border border-green-900/30 rounded p-3 bg-[#0d0d0d] max-w-xs mx-auto">
           <div className="text-green-800 text-xs italic mb-2">
