@@ -56,8 +56,9 @@ export const channels: Channel[] = [
     icon: "◉",
     youtubeIds: [
       "hiWGj7j6pxE", // melodic techno & progressive house deep focus mix
-      "DWcJFNfaw9c", // lofi hip hop radio
-      "jfKfPfyJRdk", // lofi girl
+      "bkxLApqUSbo", // minimal techno & melodic techno focus mix
+      "GxV0TggxqC8", // minimal & melodic techno with organ
+      "q3_yvs_T4Cc", // progressive house / melodic techno cosmic mix
     ],
   },
   {
