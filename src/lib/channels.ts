@@ -14,8 +14,8 @@ export const channels: Channel[] = [
     description: "chill beats to code to",
     icon: "~",
     youtubeIds: [
-      "jfKfPfyJRdk", // lofi girl
-      "rUxyKA_-grg", // lofi girl 2
+      "5yx6BWlEVcY", // chillhop radio
+      "rPjez8z61rI", // lofi hip hop radio
     ],
   },
   {
@@ -25,7 +25,7 @@ export const channels: Channel[] = [
     icon: ">",
     youtubeIds: [
       "4xDzrJKXOOY", // synthwave radio
-      "MVPTGNGiI-4", // retrowave
+      "UedTcufyrHc", // chillsynth fm
     ],
   },
   {
@@ -45,7 +45,6 @@ export const channels: Channel[] = [
     icon: "♪",
     youtubeIds: [
       "Dx5qFachd3A", // relaxing jazz piano radio 24/7
-      "kgx4WGK0oNU", // jazz/lofi hip hop radio 24/7
       "fEvM-OUbaKs", // coffee jazz lounge 24/7
     ],
   },
@@ -55,7 +54,6 @@ export const channels: Channel[] = [
     description: "minimal techno for flow state",
     icon: "◉",
     youtubeIds: [
-      "hiWGj7j6pxE", // melodic techno & progressive house deep focus mix
       "bkxLApqUSbo", // minimal techno & melodic techno focus mix
       "GxV0TggxqC8", // minimal & melodic techno with organ
       "q3_yvs_T4Cc", // progressive house / melodic techno cosmic mix
