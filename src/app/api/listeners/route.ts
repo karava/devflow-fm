@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { channels } from "@/lib/channels";
 
 // In-memory listener tracking (resets on deploy — fine for v1)
 const listeners = new Map<string, Map<string, number>>();
@@ -6,7 +7,7 @@ const TIMEOUT = 30_000; // 30s heartbeat timeout
 
 // --- Ambient listener counts (social proof) ---
 // Gives each channel a plausible baseline that drifts over time
-const CHANNEL_IDS = ["lofi", "synthwave", "ambient", "jazz", "deepfocus", "classical"];
+const CHANNEL_IDS = channels.map((c) => c.id);
 
 // Base range per channel [min, max] — lo-fi most popular, classical niche
 // These are day-0 ranges (launch date). Total grows ~5% daily.
