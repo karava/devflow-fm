@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# devflow.fm
 
-## Getting Started
+Landing page and backend API for [devflow](https://github.com/atrivolabs/devflow), a CLI focus timer with background music.
 
-First, run the development server:
+Built with Next.js, deployed on Vercel.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## API Endpoints
+
+### `GET /api/listeners`
+
+Returns current listener counts per music channel.
+
+```json
+{ "lofi": 14, "synthwave": 8, "ambient": 5, "jazz": 3, "deepfocus": 10, "classical": 2 }
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Counts combine real active listeners with an ambient baseline so channels never appear empty. The baseline per channel drifts smoothly over time (changes every ~45s) and grows ~5%/day from launch to simulate organic growth.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### `POST /api/listeners`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Heartbeat from a running devflow session. The CLI calls this every 30 seconds.
 
-## Learn More
+```json
+{ "listenerId": "uuid", "channelId": "lofi" }
+```
 
-To learn more about Next.js, take a look at the following resources:
+Returns `{ count }` for the active channel. Listeners are dropped after 30s without a heartbeat.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### `DELETE /api/listeners`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Disconnect a listener when a session ends.
 
-## Deploy on Vercel
+```json
+{ "listenerId": "uuid" }
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### `POST /api/feedback`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Submit feedback or bug reports from the CLI. Creates a GitHub issue on `atrivolabs/devflow` with environment context.
+
+```json
+{
+  "message": "music stops during breaks",
+  "context": {
+    "version": "0.1.0",
+    "os": "Linux 6.8.0",
+    "arch": "x64",
+    "node": "v22.22.0",
+    "mode": "pomodoro",
+    "channel": "lofi"
+  }
+}
+```
+
+Returns `{ ok: true, url: "https://github.com/..." }` on success.
+
+Rate limited to 5 requests/minute per IP. Message capped at 4,000 characters.
+
+Requires `GITHUB_FEEDBACK_TOKEN` env var (fine-grained PAT with Issues write permission on the devflow repo).
+
+## Development
+
+```bash
+pnpm install
+pnpm dev
+```
+
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `GITHUB_FEEDBACK_TOKEN` | Yes | GitHub PAT for creating feedback issues |
