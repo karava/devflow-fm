@@ -2,6 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 
 const GITHUB_TOKEN = process.env.GITHUB_FEEDBACK_TOKEN;
 const REPO = "atrivolabs/devflow";
+const MAX_MESSAGE_LENGTH = 4000;
+const RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 60_000;
+
+const hits = new Map<string, number[]>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (timestamps.length >= RATE_LIMIT) {
+    hits.set(ip, timestamps);
+    return true;
+  }
+  timestamps.push(now);
+  hits.set(ip, timestamps);
+  return false;
+}
 
 interface FeedbackContext {
   version?: string;
@@ -13,6 +30,11 @@ interface FeedbackContext {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (isRateLimited(ip)) {
+    return NextResponse.json({ error: "rate limited" }, { status: 429 });
+  }
+
   if (!GITHUB_TOKEN) {
     return NextResponse.json(
       { error: "feedback endpoint not configured" },
@@ -32,6 +54,10 @@ export async function POST(req: NextRequest) {
 
   if (!message || typeof message !== "string" || message.trim().length === 0) {
     return NextResponse.json({ error: "message required" }, { status: 400 });
+  }
+
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    return NextResponse.json({ error: "message too long" }, { status: 400 });
   }
 
   const title = message.split("\n")[0]?.trim().slice(0, 120) || "CLI feedback";
